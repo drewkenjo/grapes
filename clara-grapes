@@ -56,7 +56,6 @@ if [ -z "${CLASSPATH}" ]; then
 
     CLASSPATH+=":${CLARA_HOME}/services/*"
     export CLASSPATH
-echo $CLASSPATH
 fi
 
 if [ -n "${JAVA_OPTS}" ]; then
