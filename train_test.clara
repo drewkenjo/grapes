@@ -1,0 +1,10 @@
+#--------------------------------------------
+# Configuration script to run trains
+#--------------------------------------------
+set servicesFile train_test.yaml
+set fileList     files.txt
+set inputDir     /cache/clas12/rg-a/production/recon/fall2018/torus-1/pass1/v0/dst/train/skim8/
+set outputDir    output
+set threads      8
+#------------
+run local
