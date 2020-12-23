@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
 
 
 /**
@@ -52,7 +54,6 @@ public class DV1PipPimPWagon extends BeamTargetWagon {
 		event.read(recPart);
 
 		if( recPart!=null && recPart.getRows()>3 ){
-
             // electron selection
             List<Integer> eles = new ArrayList<>();
             Supplier<Boolean> goodEles = () -> eles.addAll(IntStream.range(0, recPart.getRows())
@@ -71,7 +72,7 @@ public class DV1PipPimPWagon extends BeamTargetWagon {
               .filter(ii -> recPart.getInt("pid", ii)==2212)
               .filter(ii -> {
                 int stat = recPart.getShort("status",ii);
-                return stat>2000;
+                return stat>2000 && stat<4000;
               }).filter(ii -> {
                 LorentzVector vv = getLorentzVectorWithPID(recPart, ii, 2212);
                 return vv.e()>0.94358;
@@ -102,17 +103,18 @@ public class DV1PipPimPWagon extends BeamTargetWagon {
               }).boxed().collect(Collectors.toList()));
 
             // DIS && exclusivity cuts
-            return goodEles.get() && goodPros.get() && goodPips.get() && goodPims.get()
-              && eles.stream().filter(iele -> {
+            if(goodEles.get() && goodPros.get() && goodPips.get() && goodPims.get()) {
+
+              List<double[]> rows = eles.stream().filter(iele -> {
                   LorentzVector ele = getLorentzVectorWithPID(recPart, iele, 11);
                   LorentzVector vqq = new LorentzVector(beam).sub(ele);
                   LorentzVector vww = new LorentzVector(vqq).add(targ);
 
                   return -vqq.mass2()>0.8 && vww.mass()>1.8;
-                }).flatMap(iele -> pros.stream().map(ipro -> Arrays.asList(iele,ipro)))
-                .flatMap(ivvs -> pips.stream().map(ipip -> Arrays.asList(ivvs.get(0),ivvs.get(1),ipip)))
-                .flatMap(ivvs -> pims.stream().map(ipim -> Arrays.asList(ivvs.get(0),ivvs.get(1),ivvs.get(2),ipim)))
-                .anyMatch(ivvs -> {
+              }).flatMap(iele -> pros.stream().map(ipro -> Arrays.asList(iele,ipro)))
+              .flatMap(ivvs -> pips.stream().map(ipip -> Arrays.asList(ivvs.get(0),ivvs.get(1),ipip)))
+              .flatMap(ivvs -> pims.stream().map(ipim -> Arrays.asList(ivvs.get(0),ivvs.get(1),ivvs.get(2),ipim)))
+              .map(ivvs -> {
                   LorentzVector ele = getLorentzVectorWithPID(recPart, ivvs.get(0), 11);
                   LorentzVector pro = getLorentzVectorWithPID(recPart, ivvs.get(1), 2212);
                   LorentzVector pip = getLorentzVectorWithPID(recPart, ivvs.get(2), 211);
@@ -125,7 +127,7 @@ public class DV1PipPimPWagon extends BeamTargetWagon {
                   LorentzVector vmisspim = new LorentzVector(vww).sub(pro).sub(pip);
                   LorentzVector vmiss0 = new LorentzVector(vmisspro).sub(pro);
 
-                  return Math.abs(vmiss0.e())<0.5
+                  Boolean goodEv = Math.abs(vmiss0.e())<0.5
                       && Math.abs(vmiss0.mass2())<0.1
                       && vmiss0.px()*vmiss0.px() + vmiss0.py()*vmiss0.py() < 0.5
                       && Math.toDegrees(pro.angle(vmisspro)) < 12
@@ -134,7 +136,31 @@ public class DV1PipPimPWagon extends BeamTargetWagon {
                       && vmisspro.mass2() > 0.5 && vmisspro.mass2() < 1.5
                       && vmisspip.mass2() > -0.3 && vmisspip.mass2() < 0.5
                       && vmisspim.mass2() > -0.3 && vmisspim.mass2() < 0.5;
-               });
+
+                  if(goodEv) {
+                    return new double[]{ele.px(), ele.py(), ele.pz(),
+                                       pip.px(), pip.py(), pip.pz(),
+                                       pim.px(), pim.py(), pim.pz(),
+                                       pro.px(), pro.py(), pro.pz()
+                                      };
+                  } else {
+                    return new double[]{};
+                  }
+              }).filter(vars -> vars.length>0).collect(Collectors.toList());
+
+
+              if(rows.size()>0) {
+                Bank excl = new Bank(factory.getSchema("EXCLUSIVE::ePipPimP"), rows.size());
+                for(int irow=0;irow<rows.size();irow++) {
+                  String[] names = new String[]{"ex","ey","ez","pipx","pipy","pipz","pimx","pimy","pimz","prox","proy","proz"};
+                  for(int ivar=0;ivar<names.length;ivar++) {
+                    excl.putFloat(names[ivar], irow, (float) rows.get(irow)[ivar]);
+                  }
+                }
+                event.write(excl);
+                return true;
+              }
+            }
           }
 
           return false;

@@ -17,6 +17,8 @@ import org.jlab.jnp.hipo4.data.Event;
 import org.jlab.jnp.hipo4.io.HipoWriterStream;
 import org.jlab.jnp.utils.file.FileUtils;
 import org.json.JSONObject;
+import org.jlab.jnp.hipo4.data.Schema;
+import org.jlab.jnp.grapes.services.CustomSchemas;
 
 /**
  *
@@ -39,6 +41,8 @@ public class HipoFrameWriter extends AbstractEventWriterService<HipoWriterStream
             //writer.getSche.initFromDirectory(getSchemaDirectory(opts));
             //writer.open(file.toString());
             writer.getSchemaFactory().initFromDirectory(getSchemaDirectory(opts));
+            for(Schema sch: CustomSchemas.getCustomSchemas())
+                writer.getSchemaFactory().addSchema(sch);
             //for(int i = 0; i < 5; i++){
             //    writer.addWriter(i, file.toString());
             //}

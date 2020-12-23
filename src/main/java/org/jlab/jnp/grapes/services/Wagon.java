@@ -17,6 +17,7 @@ import org.jlab.jnp.hipo4.data.DataFrame;
 import org.jlab.jnp.hipo4.data.DataFrameBuilder;
 import org.jlab.jnp.hipo4.data.Event;
 import org.jlab.jnp.hipo4.data.SchemaFactory;
+import org.jlab.jnp.hipo4.data.Schema;
 import org.jlab.jnp.utils.file.FileUtils;
 import org.jlab.jnp.utils.json.Json;
 import org.jlab.jnp.utils.json.JsonObject;
@@ -46,6 +47,8 @@ public abstract class Wagon implements Engine {
         engineVersion = version;
         String path   = FileUtils.getEnvironmentPath("CLAS12DIR", "etc/bankdefs/hipo4");
         engineDictionary.initFromDirectory(path);
+        for(Schema sch: CustomSchemas.getCustomSchemas())
+          engineDictionary.addSchema(sch);
     }
     
     abstract public boolean processDataEvent(Event event, SchemaFactory factory);
