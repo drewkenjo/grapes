@@ -13,21 +13,19 @@ import org.jlab.jnp.hipo4.data.Schema.SchemaBuilder;
  * @author kenjo
  */
 public abstract class CustomSchemas {
-    public static Schema[] getCustomSchemas() {
-      SchemaBuilder excl = new SchemaBuilder("EXCLUSIVE::ePipPimP", 555,5);
-      excl.addEntry("ex","F","ex");
-      excl.addEntry("ey","F","ey");
-      excl.addEntry("ez","F","ez");
-      excl.addEntry("pipx","F","pipx");
-      excl.addEntry("pipy","F","pipy");
-      excl.addEntry("pipz","F","pipz");
-      excl.addEntry("pimx","F","pimx");
-      excl.addEntry("pimy","F","pimy");
-      excl.addEntry("pimz","F","pimz");
-      excl.addEntry("prox","F","prox");
-      excl.addEntry("proy","F","proy");
-      excl.addEntry("proz","F","proz");
+    private static Schema buildCustomSchema(String name, int id1, int id2, String vars) {
+      SchemaBuilder schm = new SchemaBuilder(name, id1, id2);
+      for(String vname: vars.split(":")) {
+        schm.addEntry(vname, "F", vname);
+      }
+      return schm.build();
+    }
 
-      return new Schema[]{excl.build()};
+
+    public static Schema[] getCustomSchemas() {
+      return new Schema[]{
+        buildCustomSchema("EXCLUSIVE::ePipPimP", 555, 5, "ex:ey:ez:pipx:pipy:pipz:pimx:pimy:pimz:prox:proy:proz"),
+        buildCustomSchema("EXCLUSIVE::ePi0P", 444, 4, "ex:ey:ez:px:py:pz:g1x:g1y:g1z:g2x:g2y:g2z:esec:pdet:run:status")
+      };
     }
 }
